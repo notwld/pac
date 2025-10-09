@@ -54,6 +54,9 @@ export default function AnimeListScreen() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.heading}>
+        {params.kind === 'ranking' ? `Top · ${params.rankingType.toUpperCase()}` : `Seasonal · ${params.season.toUpperCase()} ${params.year}`}
+      </Text>
       <FlatList
         data={data}
         keyExtractor={(it) => String(it.node.id)}
@@ -75,6 +78,7 @@ export default function AnimeListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0b0b0c' },
+  heading: { color: '#e5e7eb', fontSize: 18, fontWeight: '700', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 6 },
   card: {
     flex: 1,
     backgroundColor: '#101113',

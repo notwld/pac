@@ -32,6 +32,7 @@ export default function EpisodesScreen() {
 
   return (
     <View style={styles.container}>
+      <Text style={[styles.title, { fontSize: 30 }]}>{title}</Text>
       <FlatList
         data={sorted}
         keyExtractor={(ep) => ep}

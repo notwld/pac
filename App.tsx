@@ -5,6 +5,7 @@ import { NavigationContainer, DefaultTheme, Theme } from '@react-navigation/nati
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import HomeScreen from './screens/HomeScreen';
+import SplashScreen from './screens/SplashScreen';
 import SearchScreen from './screens/SearchScreen';
 import AnimeInfoScreen from './screens/AnimeInfoScreen';
 import EpisodesScreen from './screens/EpisodesScreen';
@@ -41,14 +42,16 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <NavigationContainer theme={navTheme}>
-        <StatusBar barStyle="light-content" backgroundColor="#0f0f10" />
+        <StatusBar barStyle="light-content" backgroundColor="#0f0f10" hidden />
         <Stack.Navigator
           screenOptions={{
+            headerShown: false,
             headerStyle: { backgroundColor: '#0f0f10' },
             headerTitleStyle: { color: '#f1f5f9' },
             headerTintColor: '#a3e635',
           }}
         >
+          <Stack.Screen name="Splash" component={SplashScreen} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'PAC' }} />
           <Stack.Screen name="Search" component={SearchScreen} options={{ title: 'Search Anime' }} />
           <Stack.Screen name="List" component={AnimeListScreen} options={{ title: 'All' }} />

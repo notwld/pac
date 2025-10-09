@@ -38,6 +38,11 @@ export default function AnimeInfoScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 12 }}>
+      <View style={{position:"absolute",top:0,left:0,right:0,bottom:0}}> 
+      <Image source={require('../assets/yourname.jpg')} style={styles.banner} />
+        <View style={{position:"absolute",top:0,left:0,height:'100%',width:'100%',backgroundColor:"rgba(0,0,0,0.5)"}} />
+
+      </View>
       <View style={styles.headerRow}>
         {!!data?.main_picture?.large && (
           <Image source={{ uri: data.main_picture.large }} style={styles.poster} />
@@ -52,8 +57,6 @@ export default function AnimeInfoScreen() {
         </View>
       </View>
 
-      {!!data?.synopsis && <Text style={styles.synopsis}>{data.synopsis}</Text>}
-
       <Pressable
         style={({ pressed }) => [styles.btn, pressed && { opacity: 0.9 }]}
         onPress={() => {
@@ -62,6 +65,8 @@ export default function AnimeInfoScreen() {
       >
         <Text style={styles.btnText}>{firstMatch ? 'View Episodes' : 'Find Episodes'}</Text>
       </Pressable>
+
+      {!!data?.synopsis && <Text style={styles.synopsis}>{data.synopsis}</Text>}
 
       <Modal visible={pickerOpen} transparent animationType="fade" onRequestClose={() => setPickerOpen(false)}>
         <View style={styles.modalBackdrop}>
@@ -112,7 +117,8 @@ export default function AnimeInfoScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0b0b0c' },
-  headerRow: { flexDirection: 'row' },
+  banner: { width: '100%', height: 240, backgroundColor: '#0b0b0c',margin:0,padding:0 },
+  headerRow: { flexDirection: 'row',marginTop:70 },
   poster: { width: 120, height: 168, borderRadius: 10, backgroundColor: '#0b0b0c' },
   title: { color: '#e5e7eb', fontSize: 18, fontWeight: '700' },
   meta: { color: '#94a3b8', marginTop: 4 },

@@ -8,6 +8,9 @@ export type MalNode = {
   id: number;
   title: string;
   main_picture?: MalPicture;
+  // Optional fields that may be requested by specific endpoints
+  mean?: number;
+  media_type?: string;
 };
 
 export type MalRankingItem = { node: MalNode; ranking: { rank: number } };
@@ -24,6 +27,7 @@ export type MalAnimeDetails = MalNode & {
   num_episodes?: number;
   status?: string;
   genres?: { id: number; name: string }[];
+  broadcast?: { day_of_week?: string; start_time?: string };
 };
 
 export type RankingType =
@@ -54,7 +58,7 @@ async function malGet<T>(path: string, params?: Record<string, string | number |
   const qp = new URLSearchParams();
   for (const [k, v] of Object.entries(params || {})) {
     if (v === undefined) continue;
-    qp.set(k, String(v));
+    qp.append(k, String(v));
   }
   const url = `${MAL_API}${path}${qp.toString() ? `?${qp.toString()}` : ''}`;
   const res = await fetch(url, { headers: { 'X-MAL-CLIENT-ID': MAL_CLIENT_ID! } });
@@ -81,7 +85,12 @@ export async function fetchAnimeRanking(
   rankingType: RankingType,
   limit: number = 20
 ): Promise<MalListResponse<MalRankingItem>> {
-  return await malGet(`/anime/ranking`, { ranking_type: rankingType, limit, fields: 'id,title,main_picture' });
+  // Include mean score and media type so UI can render badges and ratings
+  return await malGet(`/anime/ranking`, {
+    ranking_type: rankingType,
+    limit,
+    fields: 'id,title,main_picture,mean,media_type',
+  });
 }
 
 // Fetch seasonal anime
@@ -90,14 +99,18 @@ export async function fetchSeasonalAnime(
   season: SeasonName,
   limit: number = 24
 ): Promise<MalListResponse<{ node: MalNode }>> {
-  return await malGet(`/anime/season/${year}/${season}`, { limit, fields: 'id,title,main_picture' });
+  // Include media_type for consistency with ranking cards
+  return await malGet(`/anime/season/${year}/${season}`, {
+    limit,
+    fields: 'id,title,main_picture,media_type',
+  });
 }
 
 // Fetch anime details
 export async function fetchAnimeDetails(id: number): Promise<MalAnimeDetails> {
   return await malGet(`/anime/${id}`, {
     fields:
-      'id,title,main_picture,synopsis,start_date,end_date,mean,rank,popularity,media_type,num_episodes,status,genres',
+      'id,title,main_picture,synopsis,start_date,end_date,mean,rank,popularity,media_type,num_episodes,status,genres,broadcast',
   });
 }
 

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { View, Text, Image, StyleSheet, Pressable, ScrollView, Modal, TextInput, FlatList } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable, ScrollView, Modal, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAnimeDetails } from '../api/mal';
@@ -14,7 +14,7 @@ export default function AnimeInfoScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [q, setQ] = useState('');
 
-  const { data } = useQuery({ queryKey: ['mal', id], queryFn: () => fetchAnimeDetails(id) });
+  const { data, isLoading: isDetailsLoading } = useQuery({ queryKey: ['mal', id], queryFn: () => fetchAnimeDetails(id) });
 
   useLayoutEffect(() => {
     if (data?.title) {
@@ -35,6 +35,15 @@ export default function AnimeInfoScreen() {
   });
   const listToShow = pickerOpen ? (q.trim() ? liveSearch.data ?? [] : baseSearch.data ?? []) : baseSearch.data ?? [];
   const firstMatch = baseSearch.data?.[0];
+
+  if (isDetailsLoading && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator color="#a3e635" />
+        <Text style={styles.hint}>Loading details...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 12 }}>
@@ -60,10 +69,18 @@ export default function AnimeInfoScreen() {
       <Pressable
         style={({ pressed }) => [styles.btn, pressed && { opacity: 0.9 }]}
         onPress={() => {
+          if (firstMatch) {
+            navigation.navigate('Episodes', { id: firstMatch.id, title: firstMatch.name, malId: id });
+            return;
+          }
           setPickerOpen(true);
         }}
       >
-        <Text style={styles.btnText}>{firstMatch ? 'View Episodes' : 'Find Episodes'}</Text>
+        {baseSearch.isLoading ? (
+          <ActivityIndicator color="#a3e635" />
+        ) : (
+          <Text style={styles.btnText}>{firstMatch ? 'View Episodes' : 'Find Episodes'}</Text>
+        )}
       </Pressable>
 
       {!!data?.synopsis && <Text style={styles.synopsis}>{data.synopsis}</Text>}
@@ -100,7 +117,14 @@ export default function AnimeInfoScreen() {
                 </Pressable>
               )}
               ListEmptyComponent={() => (
-                <Text style={styles.hint}>No matches. Try another title.</Text>
+                <>
+                  {(baseSearch.isLoading || liveSearch.isLoading) && (
+                    <View style={{ paddingVertical: 12 }}>
+                      <ActivityIndicator color="#a3e635" />
+                    </View>
+                  )}
+                  <Text style={styles.hint}>No matches. Try another title.</Text>
+                </>
               )}
             />
             <View style={{ alignItems: 'flex-end' }}>
@@ -134,4 +158,5 @@ const styles = StyleSheet.create({
   pickTitle: { color: '#e5e7eb', fontWeight: '600' },
   pickSub: { color: '#94a3b8', marginTop: 4 },
   close: { color: '#a3e635', fontWeight: '700', padding: 10 },
+  center: { justifyContent: 'center', alignItems: 'center', padding: 16 },
 });

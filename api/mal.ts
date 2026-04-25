@@ -2,6 +2,8 @@
 // Uses Client ID only (public data). Do NOT ship client secret to clients.
 
 const MAL_API = 'https://api.myanimelist.net/v2';
+const MAL_CLIENT_ID_DEFAULT = '5b969105b99d467d6b533edcfa24592a';
+const MAL_CLIENT_SECRET_DEFAULT = '5519d80821482e4500657e3259ae5c1b484e421d09840f4ddcaddd677e6882e2';
 
 export type MalPicture = { medium?: string; large?: string };
 export type MalNode = {
@@ -43,7 +45,8 @@ export type RankingType =
 
 export type SeasonName = 'winter' | 'spring' | 'summer' | 'fall';
 
-let MAL_CLIENT_ID: string | undefined;
+let MAL_CLIENT_ID: string | undefined = MAL_CLIENT_ID_DEFAULT;
+export const MAL_CLIENT_SECRET = MAL_CLIENT_SECRET_DEFAULT;
 
 export function configureMalClient(clientId: string) {
   MAL_CLIENT_ID = clientId;

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from 'react';
-import { View, FlatList, Pressable, Text, StyleSheet } from 'react-native';
+import { View, FlatList, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { listEpisodes } from '../api/allanime';
@@ -11,6 +11,7 @@ export default function EpisodesScreen() {
   const navigation = useNavigation<any>();
   const { id, title, malId } = route.params as Params;
   const [descending, setDescending] = useState(true);
+  const [openingEpisode, setOpeningEpisode] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -23,7 +24,7 @@ export default function EpisodesScreen() {
     });
   }, [navigation, title, descending]);
 
-  const { data } = useQuery({ queryKey: ['episodes', id], queryFn: () => listEpisodes(id) });
+  const { data, isLoading, isFetching } = useQuery({ queryKey: ['episodes', id], queryFn: () => listEpisodes(id) });
   const sorted = useMemo(() => {
     const list = [...(data ?? [])];
     list.sort((a, b) => Number(a) - Number(b));
@@ -33,15 +34,27 @@ export default function EpisodesScreen() {
   return (
     <View style={styles.container}>
       <Text style={[styles.title, { fontSize: 30 }]}>{title}</Text>
+      {(isLoading || isFetching) && (
+        <View style={styles.loaderRow}>
+          <ActivityIndicator color="#a3e635" />
+          <Text style={styles.loaderText}>Loading episodes...</Text>
+        </View>
+      )}
       <FlatList
         data={sorted}
         keyExtractor={(ep) => ep}
         renderItem={({ item }) => (
           <Pressable
             style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
-            onPress={() => navigation.navigate('Player', { id, title, ep: item, malId })}
+            onPress={() => {
+              setOpeningEpisode(item);
+              navigation.navigate('Player', { id, title, ep: item, malId });
+            }}
           >
-            <Text style={styles.title}>Episode {item}</Text>
+            <View style={styles.row}>
+              <Text style={styles.title}>Episode {item}</Text>
+              {openingEpisode === item && <ActivityIndicator color="#a3e635" size="small" />}
+            </View>
           </Pressable>
         )}
       />
@@ -62,4 +75,7 @@ const styles = StyleSheet.create({
   },
   title: { color: '#e5e7eb', fontSize: 16, fontWeight: '600' },
   sortBtn: { color: '#a3e635', fontSize: 18, paddingHorizontal: 4 },
+  loaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8 },
+  loaderText: { color: '#94a3b8' },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

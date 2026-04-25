@@ -75,7 +75,10 @@ export default function HomeScreen() {
         </View>
       </View>
       <View style={styles.sectionCard}>
-        <Text style={styles.h1}>Top Anime</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.h1}>Top Anime</Text>
+          {topQuery.isFetching && <ActivityIndicator color="#a3e635" size="small" />}
+        </View>
         <FlatList
           data={topFilters}
           keyExtractor={(it) => it.key}
@@ -123,7 +126,10 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.sectionCard}>
-        <Text style={styles.h1}>Current Season</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.h1}>Current Season</Text>
+          {seasonal.isFetching && <ActivityIndicator color="#a3e635" size="small" />}
+        </View>
         {seasonal.isLoading ? (
           <View style={styles.loader}>
             <ActivityIndicator color="#a3e635" />
@@ -152,7 +158,10 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.sectionCard}>
-        <Text style={styles.h1}>Release Schedule</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.h1}>Release Schedule</Text>
+          {hypedAiring.isFetching && <ActivityIndicator color="#a3e635" size="small" />}
+        </View>
         {hypedAiring.isLoading ? (
           <View style={styles.loader}>
             <ActivityIndicator color="#a3e635" />
@@ -224,7 +233,14 @@ function HypeRow({ id, title, poster }: { id: number; title: string; poster?: st
       {!!poster && <Image source={{ uri: poster }} style={styles.hypePoster} />}
       <View style={{ flex: 1 }}>
         <Text numberOfLines={1} style={styles.hypeTitle}>{title}</Text>
-        <Text style={styles.hypeSub}>{when}</Text>
+        {details.isLoading ? (
+          <View style={styles.rowInline}>
+            <ActivityIndicator color="#a3e635" size="small" />
+            <Text style={styles.hypeSub}>Loading schedule...</Text>
+          </View>
+        ) : (
+          <Text style={styles.hypeSub}>{when}</Text>
+        )}
       </View>
     </Pressable>
   );
@@ -233,6 +249,7 @@ function HypeRow({ id, title, poster }: { id: number; title: string; poster?: st
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0b0b0c' },
   sectionCard: { backgroundColor: '#0f0f10', borderRadius: 12, borderWidth: 1, borderColor: '#1f2937', marginHorizontal: 12, marginTop: 12 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 12 },
   h1: { color: '#e5e7eb', fontSize: 20, fontWeight: '700', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 6 },
   input: {
     backgroundColor: '#111215',
@@ -271,6 +288,7 @@ const styles = StyleSheet.create({
   hypePoster: { width: 52, height: 74, borderRadius: 8, backgroundColor: '#0b0b0c', marginRight: 4 },
   hypeTitle: { color: '#e5e7eb', fontWeight: '600' },
   hypeSub: { color: '#94a3b8', marginTop: 2 },
+  rowInline: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 16 },
   modalCard: { width: '100%', maxWidth: 520, backgroundColor: '#0f0f10', borderRadius: 12, borderWidth: 1, borderColor: '#1f2937', padding: 12 },
   modalTitle: { color: '#e5e7eb', fontSize: 16, fontWeight: '700', marginBottom: 8 },

@@ -14,7 +14,8 @@ export default function PlayerScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { id, title, ep, malId } = route.params as Params;
-  const [selected, setSelected] = useState<EpisodeSource | null>(null);
+  const [sourceIndex, setSourceIndex] = useState(0);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const [localUri, setLocalUri] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -51,7 +52,7 @@ export default function PlayerScreen() {
     };
   }, [isFullscreen, navigation]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['sources', id, ep],
     queryFn: () => getEpisodeSources(id, ep),
   });
@@ -62,11 +63,16 @@ export default function PlayerScreen() {
     enabled: !!malId,
   });
 
+  const sourcePool = (data ?? []).slice().sort((a, b) => {
+    if (a.type === b.type) return 0;
+    return a.type === 'mp4' ? -1 : 1;
+  });
+  const selected = sourcePool[sourceIndex] ?? null;
+
   useEffect(() => {
-    if (!data || data.length === 0) return;
-    const mp4 = data.find((s) => s.type === 'mp4');
-    setSelected(mp4 ?? data[0]);
-  }, [data]);
+    setSourceIndex(0);
+    setPlaybackError(null);
+  }, [id, ep, data?.length]);
 
   if (isLoading) {
     return (
@@ -76,10 +82,15 @@ export default function PlayerScreen() {
       </View>
     );
   }
-  if (error || !selected) {
+  if ((error && !selected) || (!isLoading && !selected)) {
+    const errorText = error instanceof Error ? error.message : 'Unable to fetch playable sources.';
     return (
       <View style={styles.center}>
         <Text style={styles.error}>Failed to load episode.</Text>
+        <Text style={styles.muted}>{errorText}</Text>
+        <Pressable style={styles.retryBtn} onPress={() => refetch()} disabled={isFetching}>
+          <Text style={styles.btnText}>{isFetching ? 'Retrying…' : 'Retry'}</Text>
+        </Pressable>
       </View>
     );
   }
@@ -108,8 +119,18 @@ export default function PlayerScreen() {
         controls
         resizeMode="contain"
         source={activeSource}
-        onError={(e) => console.warn('video error', e)}
+        onError={(e) => {
+          console.warn('video error', e);
+          if (localUri) return;
+          if (sourceIndex < sourcePool.length - 1) {
+            setPlaybackError(`Source failed, trying ${sourceIndex + 2}/${sourcePool.length}...`);
+            setSourceIndex((prev) => prev + 1);
+            return;
+          }
+          setPlaybackError('All available sources failed to play.');
+        }}
         onLoad={(meta: any) => {
+          setPlaybackError(null);
           const ns = meta?.naturalSize;
           if (ns?.width && ns?.height) {
             setNaturalAspectRatio(ns.width / ns.height);
@@ -183,7 +204,10 @@ export default function PlayerScreen() {
           <Text style={[styles.muted, { marginLeft: 8 }]}>Downloading…</Text>
         </View>
       )}
-      <Text style={styles.meta}>{selected?.label}</Text>
+      <Text style={styles.meta}>
+        {selected?.label} ({Math.min(sourceIndex + 1, Math.max(sourcePool.length, 1))}/{Math.max(sourcePool.length, 1)})
+      </Text>
+      {!!playbackError && <Text style={[styles.error, { paddingHorizontal: 12 }]}>{playbackError}</Text>}
 
       {!!mal.data && (
         <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
@@ -220,6 +244,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0b0b0c' },
   muted: { color: '#94a3b8', marginTop: 8 },
   error: { color: '#ef4444' },
+  retryBtn: { marginTop: 12, backgroundColor: '#1a1b1e', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, borderWidth: 1, borderColor: '#2b2f36' },
   rowWrap: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 8 },
   infoTitle: { color: '#e5e7eb', fontSize: 16, fontWeight: '700' },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start' },

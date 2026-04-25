@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, TextInput, FlatList, Text, Pressable, StyleSheet } from 'react-native';
+import { View, TextInput, FlatList, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { searchShows } from '../api/allanime';
@@ -38,6 +38,14 @@ export default function SearchScreen() {
         data={data ?? []}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingVertical: 8 }}
+        ListHeaderComponent={
+          isFetching ? (
+            <View style={styles.loaderRow}>
+              <ActivityIndicator color="#a3e635" />
+              <Text style={styles.loaderText}>Searching...</Text>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           !isFetching && q.trim()
             ? () => <Text style={styles.empty}>No results</Text>
@@ -81,4 +89,6 @@ const styles = StyleSheet.create({
   title: { color: '#e5e7eb', fontSize: 16, fontWeight: '600' },
   subtitle: { color: '#94a3b8', marginTop: 4 },
   empty: { color: '#94a3b8', textAlign: 'center', marginTop: 24 },
+  loaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12 },
+  loaderText: { color: '#94a3b8' },
 });

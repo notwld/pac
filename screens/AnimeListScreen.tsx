@@ -13,15 +13,25 @@ type ListItem = { node: MalNode } | MalRankingItem;
 export default function AnimeListScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const params = route.params as Params;
+  const params = route.params as Params | undefined;
+  const isRanking = params?.kind === 'ranking';
+  const isSeason = params?.kind === 'season';
 
   useLayoutEffect(() => {
-    if (params.kind === 'ranking') {
+    if (isRanking) {
       navigation.setOptions({ title: `All · ${params.rankingType}` });
-    } else {
+    } else if (isSeason) {
       navigation.setOptions({ title: `All · ${params.season} ${params.year}` });
     }
-  }, [navigation, params]);
+  }, [navigation, isRanking, isSeason, params]);
+
+  if (!params || (!isRanking && !isSeason)) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.loadingText}>Unable to open list.</Text>
+      </View>
+    );
+  }
 
   const query = useInfiniteQuery({
     queryKey: ['list', params],
@@ -29,7 +39,7 @@ export default function AnimeListScreen() {
       if (typeof pageParam === 'string') {
         return await malGetAbsolute<MalListResponse<ListItem>>(pageParam);
       }
-      if (params.kind === 'ranking') {
+      if (isRanking) {
         return await fetchAnimeRanking(params.rankingType, 30) as unknown as MalListResponse<ListItem>;
       }
       return await fetchSeasonalAnime(params.year, params.season, 30) as unknown as MalListResponse<ListItem>;
@@ -39,6 +49,23 @@ export default function AnimeListScreen() {
   });
 
   const data = query.data?.pages.flatMap((p) => p.data) ?? [];
+
+  if (query.isLoading || query.isPending) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator color="#a3e635" />
+        <Text style={styles.loadingText}>Loading anime...</Text>
+      </View>
+    );
+  }
+
+  if (query.isError) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.loadingText}>Failed to load anime list.</Text>
+      </View>
+    );
+  }
 
   const renderItem = useCallback(({ item }: { item: ListItem }) => (
     <Pressable
@@ -55,8 +82,14 @@ export default function AnimeListScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>
-        {params.kind === 'ranking' ? `Top · ${params.rankingType.toUpperCase()}` : `Seasonal · ${params.season.toUpperCase()} ${params.year}`}
+        {isRanking ? `Top · ${params.rankingType.toUpperCase()}` : `Seasonal · ${params.season.toUpperCase()} ${params.year}`}
       </Text>
+      {query.isFetching && !query.isFetchingNextPage && (
+        <View style={styles.inlineLoader}>
+          <ActivityIndicator color="#a3e635" size="small" />
+          <Text style={styles.loadingText}>Refreshing...</Text>
+        </View>
+      )}
       <FlatList
         data={data}
         keyExtractor={(it) => String(it.node.id)}
@@ -71,6 +104,11 @@ export default function AnimeListScreen() {
             <ActivityIndicator color="#a3e635" />
           </View>
         ) : null}
+        ListEmptyComponent={
+          <View style={styles.center}>
+            <Text style={styles.loadingText}>No items found.</Text>
+          </View>
+        }
       />
     </View>
   );
@@ -79,6 +117,9 @@ export default function AnimeListScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0b0b0c' },
   heading: { color: '#e5e7eb', fontSize: 18, fontWeight: '700', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 6 },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  inlineLoader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingBottom: 8 },
+  loadingText: { color: '#94a3b8', marginTop: 6 },
   card: {
     flex: 1,
     backgroundColor: '#101113',
